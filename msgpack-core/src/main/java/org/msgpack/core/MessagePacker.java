@@ -29,6 +29,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+import java.util.HashMap;
 
 import static org.msgpack.core.MessagePack.Code.ARRAY16;
 import static org.msgpack.core.MessagePack.Code.ARRAY32;
@@ -107,6 +108,10 @@ public class MessagePacker
      * String encoder
      */
     private CharsetEncoder encoder;
+    
+    private HashMap<String, Integer> keyMap = new HashMap<>();
+    private int keyId = 1;
+
 
     /**
      * Create an MessagePacker that outputs the packed data to the given {@link org.msgpack.core.buffer.MessageBufferOutput}.
@@ -141,6 +146,8 @@ public class MessagePacker
         flush();
         MessageBufferOutput old = this.out;
         this.out = newOut;
+		this.keyMap.clear();
+        this.keyId = 1;
 
         // Reset totalFlushBytes
         this.totalFlushBytes = 0;
@@ -783,4 +790,18 @@ public class MessagePacker
         }
         return this;
     }
+
+	public void packKey(String string) throws IOException {
+		Integer key = this.keyMap.get(string);
+		if(key != null) {
+			writeByteAndByte(FIXEXT2, key.byteValue());
+		} else if(this.keyId < 512) {
+			this.keyMap.put(string, keyId);
+			writeByteAndByte(FIXEXT1, (byte)keyId++);
+			packString(string);
+		} else 
+			packString(string);
+        
+		
+	}
 }

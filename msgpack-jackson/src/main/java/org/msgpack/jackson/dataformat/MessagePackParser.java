@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class MessagePackParser
@@ -295,10 +296,28 @@ public class MessagePackParser
                 newStack = new StackItemForObject(messageUnpacker.unpackMapHeader());
                 break;
             case EXTENSION:
-                type = Type.EXT;
-                ExtensionTypeHeader header = messageUnpacker.unpackExtensionTypeHeader();
-                extensionTypeValue = new MessagePackExtensionType(header.getType(), messageUnpacker.readPayload(header.getLength()));
-                nextToken = JsonToken.VALUE_EMBEDDED_OBJECT;
+            	if(format == MessageFormat.FIXEXT1 || format == MessageFormat.FIXEXT2) {
+            		int key = messageUnpacker.unpackKey();
+            		if(format == MessageFormat.FIXEXT1) {
+                		stringValue = messageUnpacker.unpackString();
+                		messageUnpacker.putKey(key, stringValue);
+            		} else {
+            			stringValue = messageUnpacker.getKey(key);
+            		}
+            		type = Type.STRING;
+                    if (parsingContext.inObject() && _currToken != JsonToken.FIELD_NAME) {
+                        parsingContext.setCurrentName(stringValue);
+                        nextToken = JsonToken.FIELD_NAME;
+                    }
+                    else {
+                        nextToken = JsonToken.VALUE_STRING;
+                    }
+            	} else {
+	                type = Type.EXT;
+	                ExtensionTypeHeader header = messageUnpacker.unpackExtensionTypeHeader();
+	                extensionTypeValue = new MessagePackExtensionType(header.getType(), messageUnpacker.readPayload(header.getLength()));
+	                nextToken = JsonToken.VALUE_EMBEDDED_OBJECT;
+            	}
                 break;
             default:
                 throw new IllegalStateException("Shouldn't reach here");

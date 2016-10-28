@@ -287,7 +287,10 @@ public class MessagePackGenerator
         messagePacker.packMapHeader(keys.size());
 
         for (int i = 0; i < keys.size(); i++) {
-            pack(keys.get(i));
+        	if(keys.get(i) instanceof String)
+        		messagePacker.packKey((String)keys.get(i));
+        	else 
+        		pack(keys.get(i));
             pack(values.get(i));
         }
     }

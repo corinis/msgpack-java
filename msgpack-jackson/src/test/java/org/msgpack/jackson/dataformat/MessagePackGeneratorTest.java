@@ -461,6 +461,43 @@ public class MessagePackGeneratorTest
         assertNotEquals(resultWithoutStr8Format[0], MessagePack.Code.STR8);
     }
 
+    
+    final protected static char[] hexArray = "0123456789abcdef".toCharArray();
+    private String toString(byte[] bytes) {
+    	  char[] hexChars = new char[bytes.length * 2];
+    	    for ( int j = 0; j < bytes.length; j++ ) {
+    	        int v = bytes[j] & 0xFF;
+    	        hexChars[j * 2] = hexArray[v >>> 4];
+    	        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+    	    }
+    	    return new String(hexChars);
+    }
+    
+    @Test
+    public void testObjectArrray()
+      throws Exception
+    {
+    	int len = 2;
+    	TestObj[] obj = new TestObj[len];
+    	for(int i = 0; i < len; i++) {
+    		obj[i] = new TestObj();
+    		obj[i].key = i;
+    		obj[i].name = "test" + i;
+    	}
+
+        ObjectMapper defaultMapper = new ObjectMapper(new MessagePackFactory());
+        byte[] result = defaultMapper.writer().writeValueAsBytes(obj);
+        System.out.println(toString(result));
+        assertEquals("9282d401a36b657900d402a46e616d65a5746573743082d50101d502a57465737431", toString(result)); 
+        // 10x 171 vs. 130
+        // 100x 1793 vs. 1302
+        System.out.println(result.length);
+        obj = defaultMapper.readValue(result, TestObj[].class);
+        assertEquals(2, obj.length);
+        assertEquals(0, obj[0].key);
+        assertEquals("test0", obj[0].name);
+    }
+    
     interface NonStringKeyMapHolder
     {
         Map<Integer, String> getIntMap();

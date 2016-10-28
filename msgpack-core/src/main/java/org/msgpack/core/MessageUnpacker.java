@@ -122,6 +122,11 @@ public class MessageUnpacker
     private CharBuffer decodeBuffer;
 
     /**
+     * Lookup map for keys
+     */
+    private HashMap<Integer, String> keyMap = new HashMap<>();
+
+    /**
      * Create an MessageUnpacker that reads data from the given MessageBufferInput.
      * This method is available for subclasses to override. Use MessagePack.UnpackerConfig.newUnpacker method to instanciate this implementation.
      *
@@ -155,6 +160,7 @@ public class MessageUnpacker
         this.buffer = EMPTY_BUFFER;
         this.position = 0;
         this.totalReadBytes = 0;
+        this.keyMap.clear();
         // No need to initialize the already allocated string decoder here since we can reuse it.
 
         return old;
@@ -1383,5 +1389,18 @@ public class MessageUnpacker
     {
         long lv = (long) (u32 & 0x7fffffff) + 0x80000000L;
         return new MessageSizeException(lv);
+    }
+
+    public void putKey(int id, String key) {
+    	keyMap.put(id, key);
+    }
+    
+    public String getKey(int id) {
+    	return keyMap.get(id);
+    }
+    
+    public byte unpackKey() throws IOException {
+    	readByte();
+    	return readByte();
     }
 }
